@@ -1,6 +1,6 @@
 import numpy as np
 import geopandas as gpd
-from shapely.geometry import Polygon, asPolygon
+from shapely.geometry import Polygon
 from matplotlib.collections import PolyCollection
 from sklearn.neighbors import BallTree
 from .utils import convert_geodataframe, geometry_to_2d, convert_numpy
@@ -88,30 +88,29 @@ def construct_square_grid(XYs, tiles_x, tiles_y):
         Integer declaring number of tiles along X axis.
     tiles_y : integer
         Integer declaring number of tiles along Y axis.
-        
+    
     Returns
     -------
     grid : GeoDataFrame Dataframe
         GeoDataFrame with square grids as shapely polygons.
-    
     """
     minx, miny, maxx, maxy = XYs.total_bounds
 
-    rows = np.array(list(np.arange(0, tiles_x))*tiles_y)
+    rows = np.array(list(np.arange(0, tiles_x)) * tiles_y)
     columns = np.repeat(np.arange(0, tiles_y), tiles_x)
-    
+
     dx = (maxx - minx) / tiles_x
     dy = (maxy - miny) / tiles_y
 
     bottom_left = np.add(minx, np.multiply(rows, dx)), np.add(miny, np.multiply(columns, dy))
-    bottom_right = np.add(minx, np.multiply(rows+1, dx)), np.add(miny, np.multiply(columns, dy))
-    top_right = np.add(minx, np.multiply(rows+1, dx)), np.add(miny, np.multiply(columns+1, dy))
-    top_left = np.add(minx, np.multiply(rows, dx)), np.add(miny, np.multiply(columns+1, dy))
+    bottom_right = np.add(minx, np.multiply(rows + 1, dx)), np.add(miny, np.multiply(columns, dy))
+    top_right = np.add(minx, np.multiply(rows + 1, dx)), np.add(miny, np.multiply(columns + 1, dy))
+    top_left = np.add(minx, np.multiply(rows, dx)), np.add(miny, np.multiply(columns + 1, dy))
 
-    polys = np.vstack([bottom_left, bottom_right, top_right, top_left]).reshape(4,2,-1)
-    polys = [asPolygon(polys[:,:,i]) for i in range(tiles_x*tiles_y)]
+    polys = np.vstack([bottom_left, bottom_right, top_right, top_left]).reshape(4, 2, -1)
+    polys = [Polygon(poly) for poly in polys.T]  # Transpose for iterating over rows
 
-    grid = gpd.GeoDataFrame({'geometry':polys})
+    grid = gpd.GeoDataFrame({'geometry': polys})
 
     return grid
 
